@@ -1,0 +1,401 @@
+#########################
+#
+# DiD script 
+# 
+#########################
+
+##################
+## Load in packages =====
+##################
+library(did)
+library(dplyr)
+library(reshape2)
+library(stringr)
+library(tidyverse)
+library(data.table)
+library(readxl)
+library(ggpubr)
+library(moments)
+library(table1)
+detach(package:plyr) # just to make sure plyr is not loaded
+
+##################
+## Load in data =====
+##################
+
+###########
+# AMI data
+AMISexYounger <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/AMI Metadata/Data for reviewer comment/2007_2019_Rdataset_35_64.xlsx", sheet = "Sheet1")
+AMIYounger <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/AMI Metadata/Data for reviewer comment/2007_2019_Rdataset_35_64_alladults.xlsx", sheet = "Sheet1")
+AMIYounger4_AL <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/AMI Metadata/Data for reviewer comment/2013_2019_dataset_4 age groups_35_64_alladults.xlsx", sheet = "Sheet1")
+AMIYounger4 <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/AMI Metadata/Data for reviewer comment/2013_2019_dataset_4 age groups_35_64.xlsx", sheet = "Sheet1")
+AMI_1year <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/AMI Metadata/2013_2019_Mock dataset_4 age groups_1 year older rates.xlsx", sheet = "Sheet1")
+AMISexOlder <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/AMI Metadata/Mock 2007_2019SexOlder.xlsx", sheet = "Sheet1")
+AMI <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/AMI Metadata/Mock dataset2007_2019.xlsx", sheet = "dataset")
+
+ALTAMIYounger <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/AMI Metadata/Data for reviewer comment/Pre_Post_datase_35_64_alladults.xlsx", sheet = "Sheet1")
+ALTAMISexYounger <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/AMI Metadata/Data for reviewer comment/Pre_Post_datase_35_64_alternative.xlsx", sheet = "Sheet1")
+ALTAMI <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/AMI Metadata/Pre_Post_Mock_dataset.xlsx", sheet = "Sheet1")
+ALTAMISexOlder <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/AMI Metadata/Mock_Pre_Post_SexOlder.xlsx", sheet = "Sheet1")
+
+###########
+# Exposure and predictor data
+DiDCovariates <- read.csv("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/Data/DiDCovariates20220404.csv")
+agricultural_data <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/Data/2010 census data/agricultural_data.xlsx")
+Treated <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/Data/Townships Exposure/Two year townships treatment March292020_Jie.xlsx", sheet = "Sheet1")
+HealthCareAccessibilty <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/Data/Accessibility_E2SFCA_mockdataset.xlsx")
+Temperature <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/Data/LST/OutdoorTemperature_June2_2022.xlsx")
+CVDriskfactors <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/Data/CVD risk factors.xlsx", sheet = "Sheet1")
+RetiredPowerPlants <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/Data/BeijignTownships_Powerplants.xlsx", sheet = "Sheet1")
+Temperature_fluct <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/Data/Temperature_fluctuation.xlsx")
+
+##################
+## Data mangagement =====
+##################
+
+###########
+# AMI data
+
+amimutate <- function(x){
+  x2 <- x %>%
+    filter(Period == "13_14"|Period == "16_17"|Period == "18_19") %>%
+    reshape2::dcast(ID + Period ~ Sex + Age, value.var = "Rate") %>%
+    mutate(Key = paste0(ID, "_", stringr::str_replace_all(Period, "_", "")))
+}
+
+# all adults 35-64, women 35-64, and men 35-64 starting in Jan
+AMIYounger <- rbind(AMIYounger, AMISexYounger)
+WideAMIYounger <- amimutate(AMIYounger) 
+colnames(WideAMIYounger) <- c("ID", "Period", "AMI_All_35_64", "AMI_men_35_64", "AMI_women_35_64", "Key")
+
+# all adults 35-64, women 35-64, and men 35-64 starting in Jan for 4 groups
+AMIYounger4 <- rbind(AMIYounger4_AL,AMIYounger4)
+WideAMIYounger4 <- amimutate(AMIYounger4) 
+colnames(WideAMIYounger4) <- c("ID", "Period", "AMI_All_35_49_4G", "AMI_All_35_64_4G", "AMI_All_50_64_4G", "Key")
+
+# all ages, allwomen, all men, both genders over 65, women 65 and over, and men 65 and over starting starting in Jan
+AMI_temp <- rbind(AMISexOlder, AMI)
+WideAMISexOlder <- amimutate(AMI_temp) 
+colnames(WideAMISexOlder) <- c("ID", "Period", "AMI_All_65", "AMI_All_Standardized", "AMI_men_65", "AMI_men_all",
+                               "AMI_women_65", "AMI_women_all", "Key")
+
+# Nov start for rates all 35-64, women 35-64, men 35-64, all ages, women 65 and over, men 65 and over, allwomen, all men, and both genders over 65
+WideALTAMI <- rbind(ALTAMISexYounger, ALTAMIYounger, ALTAMI, ALTAMISexOlder) %>%
+  mutate(Period = case_when(Period == "Pre" ~ "13_14",
+                            Period == "First_post" ~ "16_17",
+                            Period == "Second_post" ~"18_19")) %>%
+  reshape2::dcast(ID + Period ~ Sex + Age, value.var = "Rate") %>%
+  mutate(Key = paste0(ID, "_", stringr::str_replace_all(Period, "_", "")))
+colnames(WideALTAMI) <- c("ID", "Period", "AltAMI_All_65over", "AltAMI_All_35_64", "AltAMI_All_Standardized",
+                          "AltAMI_men_65","AltAMI_men_35_64", "AltAMI_men_all", "AltAMI_women_65",
+                          "AltAMI_women_35_64", "AltAMI_women_all", "Key") 
+
+# add in the 2 year AMI rates from the 2 years dataset (more age breakdown)
+AMI_1year <- AMI_1year %>%
+  mutate(NumYear = ifelse(str_detect(Period, "_"), "2Years", "1Year")) %>%
+  filter(NumYear == "2Years") %>%
+  mutate(Period = str_replace_all(Period, "_", "")) %>%
+  mutate(AMI_sex_age = paste0(Sex, "_", Age)) %>%
+  mutate(Key = paste0(ID, "_", Period))
+AMI_1year <- reshape2::dcast(AMI_1year, Key + ID ~ AMI_sex_age, value.var = "Rate")
+
+# merge all  datasets ------
+temp <- merge(WideAMIYounger, WideALTAMI[, 3:12], by = "Key")
+temp <- merge(temp, WideAMIYounger4[, c("Key", "AMI_All_35_64_4G", "AMI_All_35_49_4G", "AMI_All_50_64_4G")], by = "Key")
+temp <- merge(temp, WideAMISexOlder[, c("Key", "AMI_All_65", "AMI_All_Standardized", "AMI_men_65",
+                                        "AMI_men_all", "AMI_women_65", "AMI_women_all")], by = "Key")
+AMI_AllRates <- merge(temp, AMI_1year[, c("Key", "All_≥65_2agegroups", "All_≥80", "All_65_79", "All_Standardized_4agegroups")], by = "Key")
+
+###########
+# other variables
+
+DiDCovariates <- DiDCovariates %>%
+  mutate(HSchool = (Total_totover5-Subtotal_never-Subtotal_primary-Subtotal_juniorhigh)/Total_totover5,
+         Unempl = Unemployed/TotalEconomicallyActivePopulation_over15,
+         Agi = (X1_AgricultureForestry-X1f_serviceIndustryAgricultureetc)/Total_Industry) 
+DiDCovariates$HSchool[is.na(DiDCovariates$HSchool)] <- DiDCovariates[DiDCovariates$ID == 261,]$HSchool
+DiDCovariates <- aggregate(cbind(HSchool, Unempl, Agi) ~ ID, data = DiDCovariates, mean)
+
+# agi data
+agricultural_data$propAgri <- agricultural_data$agri_total/agricultural_data$total
+
+# Treated status
+Treated <- Treated %>%
+  group_by(ID) %>%
+  mutate(First.year = min(
+    if_else(TreatPropCuml > 0.5, as.integer(Year), NA_integer_),
+    na.rm = TRUE)) %>%
+  mutate(First.year0.8 = min(
+    if_else(TreatPropCuml > 0.8, as.integer(Year), NA_integer_),
+    na.rm = TRUE)) %>%
+  mutate(First.year0.3 = min(
+    if_else(TreatPropCuml > 0.3, as.integer(Year), NA_integer_),
+    na.rm = TRUE)) %>%
+  mutate(First.year0.7 = min(
+    if_else(TreatPropCuml > 0.7, as.integer(Year), NA_integer_),
+    na.rm = TRUE)) %>%
+  mutate(TCat = max(case_when(TreatPropCuml <= 0.25 ~ "A",
+                              TreatPropCuml <= 0.5 & TreatPropCuml > 0.25 ~ "B",
+                              TreatPropCuml <= 0.75 & TreatPropCuml > 0.5 ~ "C",
+                              TreatPropCuml > 0.75 ~ "D"))) 
+Treated[Treated == Inf] <- 0
+Treated <- Treated[Treated$Year == 2019|Treated$Year == 2017,
+                   c("ID", "TimePeriod", "TreatPropCuml", "TreatedPropMax", "First.year", "First.year0.8", "First.year0.3","First.year0.7", "TCat")]
+Treated$Period <- ifelse(Treated$TimePeriod == 1, "1617", "1819")
+Treated$Key <- paste0(Treated$ID, "_", Treated$Period)
+
+# health care access
+HealthCareAccess <- HealthCareAccessibilty %>%
+  filter(Year == 2013|Year == 2014|Year == 2016|Year == 2017| Year == 2018|Year == 2019) %>% # remove some years
+  mutate(TimePeriod = case_when(Year == 2019|Year == 2018 ~ "1819",
+                                Year == 2016|Year == 2017 ~ "1617",
+                                Year == 2013|Year == 2014 ~ "1314")) %>%
+  group_by(ID, TimePeriod) %>%
+  mutate(Bed = mean(Access_bed_thou),
+         Personnel = mean(Access_personnel_thou)) 
+Health <- HealthCareAccess[!duplicated(HealthCareAccess[, c("ID", "TimePeriod", "Personnel", "Bed")]), c("ID", "TimePeriod", "Personnel", "Bed")] 
+Health$Key <- paste0(Health$ID, "_", Health$TimePeriod)
+
+# temperature data
+Temperature <- reshape2::melt(Temperature, id.vars = "ID", variable.name = "Period_variable", 
+                              value.name = "OTemp") %>%
+  mutate(Key = case_when(str_detect(Period_variable, "Pre") ~ "1314",
+                         str_detect(Period_variable, "Post1") ~ "1617",
+                         str_detect(Period_variable, "Post2") ~ "1819")) %>%
+  mutate(AMI_Type = case_when(str_detect(Period_variable, "Nov") ~ "NovStart",
+                              TRUE ~ "CalandarStart")) %>%
+  mutate(Key = paste0(ID, "_", Key)) %>%
+  reshape2::dcast(., Key + ID ~ AMI_Type, value.var = "OTemp") %>%
+  mutate(ID = as.numeric(ID))
+
+# add in the CVD risk factors
+CVDriskfactors <- CVDriskfactors %>%
+  dplyr::select(c("ID", "rate_obesity2014", "rate_hyperTC2014", "rate_smoke2014",
+                  "rate_obesity2017", "rate_hyperTC2017", "rate_smoke2017")) 
+
+# power plants
+RetiredPowerPlants$Key <- paste0(RetiredPowerPlants$ID, "_", RetiredPowerPlants$TimePeriod)
+RetiredPowerPlants$BPPlant <- ifelse(RetiredPowerPlants$PPlant > 0, 1, 0)
+
+
+# merge dataset
+l <- list(Temperature, 
+          Treated[, c("TreatPropCuml", "TreatedPropMax", "Key", "First.year", "First.year0.8", "First.year0.3", "First.year0.7","TCat")], 
+          Health[,c("TimePeriod", "Personnel", "Bed", "Key")], RetiredPowerPlants[,c("BPPlant", "Key")],
+          Temperature_fluct[,c("dailymean_sd_heat", "dailymed_temp_dif_annual", "dailymean_sd_annual", "mean_temp_annual", "mean_temp_heat", "sd_temp_heat", "Key")],
+          AMI_AllRates[,c("AMI_All_Standardized", "AMI_men_65", "AMI_women_65", 
+                          "AltAMI_All_Standardized", "AltAMI_men_65", "AltAMI_women_65", 
+                          "AMI_All_65", "AMI_men_all", "AMI_women_all",
+                          "AltAMI_All_65over", "AltAMI_men_all", "AltAMI_women_all", 
+                          "All_≥65_2agegroups", "All_≥80", "All_65_79", "All_Standardized_4agegroups", 
+                          "AMI_All_35_64", "AMI_men_35_64", "AMI_women_35_64", "AMI_All_35_64_4G",
+                          "AMI_All_35_49_4G", "AMI_All_50_64_4G", "AltAMI_All_35_64", "AltAMI_men_35_64", 
+                          "AltAMI_women_35_64", "Key")])
+temp2 <- purrr::reduce(.x = l, merge, by = "Key", all = T)
+
+l <- list(temp2, CVDriskfactors, agricultural_data[,c("ID", "propAgri")], DiDCovariates[,c("ID", "HSchool", "Unempl")])
+Merge <- purrr::reduce(.x = l, merge, by = "ID", all = T)
+
+# add in the ineligible townships
+Pull <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,  12,  13,  14,  15,  16,  17,  18,  19,  20,  21,  22,
+          23,  24,  25,  26,  27,  28,  29,  30,  31,  32,  33,  34,  35,  36,  37,  38,
+          39,  40,  41,  42,  43,  44, 45,  46,  47,  48,  49,  50,  51,  52,  53,  54,
+          57,  58,  59,  60,  61,  62,  65,  69,  70,  71,  72,  73,74,  75,  76,  77,  
+          78,  79,  80,  81,  82,  83,  84,  86,  87,  88,  89,  90,  91,  92,  93,  94,
+          95,  96, 97,  98,  99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 
+          111, 112, 117, 118, 119, 126, 130, 148, 149, 159, 164, 165, 166, 179, 182, 183,
+          184, 190, 195, 196, 197, 220, 221, 238, 239, 240, 258, 259, 260, 277, 279, 281,
+          282, 284, 285, 287, 290, 291, 292, 293, 294, 295, 298, 299, 300, 301, 303, 304,
+          305, 307, 289, 288, 121, 67)
+Merge$Ineligible <- ifelse(Merge$ID %in% Pull, 1,0)
+Pull_SA <- c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11,  12,  13,  14,  15,  16,  17,  18,  19,  20,  21,  22,
+             23,  24,  25,  26,  27,  28,  29,  30,  31,  32,  33,  34,  35,  36,  37,  38,
+             39,  40,  41,  42,  43,  44, 45,  46,  47,  48,  49,  50,  51,  52,  53,  54,
+             57,  58,  59,  60,  61,  62,  65,  69,  70,  71,  72,  73,74,  75,  76,  77,  
+             78,  79,  80,  81,  82,  83,  84,  86,  87,  88,  89,  90,  91,  92,  93,  94,
+             95,  96, 97,  98,  99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 
+             111, 112, 117, 118, 119, 126, 130, 148, 149, 159, 164, 165, 166, 179, 182, 183,
+             184, 190, 195, 196, 197, 220, 221, 238, 239, 240, 258, 259, 260, 277, 279, 281,
+             282, 284, 285, 287, 290, 291, 292, 293, 294, 295, 298, 299, 300, 301, 303, 304,
+             305, 307, 289, 288, 121, 67, 113, 55, 68, 302, 64, 63)
+Merge$Ineligible_SA <- ifelse(Merge$ID %in% Pull_SA, 1,0)
+
+# replace NAs with 0 for the 1314 time points
+Merge$TreatedPropMax[is.na(Merge$TreatedPropMax)] <- 0
+Merge <- Merge %>%
+  mutate(TPoint = case_when(str_detect(Key, "1314") ~ 2014,
+                            str_detect(Key, "1617") ~ 2017,
+                            str_detect(Key, "1819") ~ 2019)) %>%
+  group_by(ID) %>%
+  fill(First.year, .direction = "up") %>%
+  fill(First.year0.8, .direction = "up") %>%
+  fill(First.year0.3, .direction = "up") %>%
+  fill(First.year0.7, .direction = "up") %>%
+  fill(TCat, .direction = "up") %>%
+  mutate(TreatPropCuml = ifelse(is.na(TreatPropCuml),0, TreatPropCuml)) %>%
+  mutate(Treated = case_when(TreatedPropMax > 0.5 ~ 1,TreatedPropMax <= 0.5 ~ 0)) %>%
+  mutate(First.T = case_when(First.year == 2016 | First.year == 2017 ~ 2017,
+                             First.year == 2018 | First.year == 2019 ~ 2019,
+                             First.year == 0 ~ 0)) %>%
+  mutate(First.T2 = case_when(First.year == 2016 | First.year == 2017 ~ "treated in 2016-2017",
+                              First.year == 2018 | First.year == 2019 ~ "treated in 2018-2019",
+                              First.year == 0 ~ "never treated")) %>%
+  mutate(First.T_0.8 = case_when(First.year0.8 == 2016 | First.year0.8 == 2017 ~ 2017,
+                                 First.year0.8 == 2018 | First.year0.8 == 2019 ~ 2019,
+                                 First.year0.8 == 0 ~ 0)) %>%
+  mutate(First.T_0.3 = case_when(First.year0.3 == 2016 | First.year0.3 == 2017 ~ 2017,
+                                 First.year0.3 == 2018 | First.year0.3 == 2019 ~ 2019,
+                                 First.year0.3 == 0 ~ 0)) %>%
+  mutate(First.T_0.7 = case_when(First.year0.7 == 2016 | First.year0.7 == 2017 ~ 2017,
+                                 First.year0.7 == 2018 | First.year0.7 == 2019 ~ 2019,
+                                 First.year0.7 == 0 ~ 0)) %>%
+  mutate(Smoking = case_when(TimePeriod == "1314" ~ rate_smoke2014,
+                             TimePeriod == "1617" ~ rate_smoke2017,
+                             TimePeriod == "1819" ~ rate_smoke2017)) %>%
+  mutate(Obesity = case_when(TimePeriod == "1314" ~ rate_obesity2014,
+                             TimePeriod == "1617" ~ rate_obesity2017,
+                             TimePeriod == "1819" ~ rate_obesity2017)) %>%
+  mutate(hyperTC = case_when(TimePeriod == "1314" ~ rate_hyperTC2014,
+                             TimePeriod == "1617" ~ rate_hyperTC2017,
+                             TimePeriod == "1819" ~ rate_hyperTC2017)) %>%
+  mutate(MaxTreat = (max(TreatPropCuml))*100) %>%
+  mutate(GroupD = ifelse(TCat == "D", 1,0)) %>%
+  mutate(GroupC = ifelse(TCat == "C", 1,0)) %>%
+  mutate(GroupB = ifelse(TCat == "B", 1,0)) 
+
+
+####################
+## CHECK THAT FIRST.YEAR IS NOT JUST ONE YEAR
+table(Merge$First.year)
+
+Merge<- as.data.frame(Merge)
+
+colnames(Merge)[which(names(Merge) == "All_≥80")] <- "All_80"
+colnames(Merge)[which(names(Merge) == "All_≥65_2agegroups")] <- "All_65_2agegroups"
+
+##############################################
+# Staggered Difference in Difference 
+##############################################
+
+List <- c("AMI_All_Standardized", "AMI_men_all", "AMI_women_all",
+        "AMI_All_35_64", "AMI_men_35_64", "AMI_women_35_64", 
+        "AMI_All_65","AMI_men_65", "AMI_women_65", 
+        "All_Standardized_4agegroups","AMI_All_35_64_4G","All_65_2agegroups",
+        "AMI_All_35_49_4G", "AMI_All_50_64_4G", "All_65_79", "All_80",
+        "AltAMI_All_Standardized", "AltAMI_men_all", "AltAMI_women_all", 
+        "AltAMI_All_35_64", "AltAMI_men_35_64", "AltAMI_women_35_64",
+        "AltAMI_All_65over", "AltAMI_men_65", "AltAMI_women_65")
+
+#-----------------------------
+# staggered DiD with no covariates
+
+# If the effects of the program are systematically different across groups, 
+# then this can lead to confounding dynamics and selective treatment timing among 
+# different groups. One way to combat this is to balance the sample by (i) only 
+# including groups that are exposed to the treatment for at least a certain 
+# number of time periods and (ii) only look at dynamic effects in those time periods. 
+# we will only look at dynamic effects since I like think lag is covered by the long averaging of the outcome
+
+StaggeredDiDData <- data.frame()
+for(i in 1:length(List)){
+  did_att_gt <- att_gt(yname=List[i],
+                       tname="TPoint",
+                       idname="ID",
+                       gname="First.T",
+                       xformla = ~ NULL,
+                       data = Merge[Merge$Ineligible == 0, ]
+  )
+  #summary(did_att_gt)
+  #ggdid(did_att_gt)
+  # aggregate them into event study plot
+  did.es <- aggte(did_att_gt, type="dynamic") # overall effect averages the effect of the treatment across all positive lengths of exposure
+  # plot the event study
+  #ggdid(did.es)
+  StaggeredDiDData <- rbind(StaggeredDiDData, cbind(List[i], did_att_gt$Wpval[1], paste("overall"), did.es$overall.att,
+                                                    did.es$overall.att-(did.es$overall.se*1.96),
+                                                    did.es$overall.att+(did.es$overall.se*1.96)),
+                            cbind(List[i], did_att_gt$Wpval[1], did.es$egt, did.es$att.egt, did.es$att.egt-(did.es$se.egt*did.es$crit.val.egt[[1]]), did.es$att.egt+(did.es$se.egt*did.es$crit.val.egt[[1]])))
+  
+  
+}
+names(StaggeredDiDData) <- c("Model", "WaldPvalue", "Vari", "ATT", "LowerCI", "UpperCI")
+
+
+#-----------------------------
+# staggered DiD with covariates - Nov start temperature
+
+StaggeredDiDData_covarNov <- data.frame()
+for(i in 1:length(List)){
+  did_att_gt <- att_gt(yname=List[i],
+                       tname="TPoint",
+                       idname="ID",
+                       gname="First.T",
+                       xformla = ~ Bed + NovStart + propAgri + HSchool + Unempl,
+                       data = Merge[Merge$Ineligible == 0, ]
+  )
+  #summary(did_att_gt)
+  #ggdid(did_att_gt)
+  # aggregate them into event study plot
+  did.es <- aggte(did_att_gt, type="dynamic")
+  # plot the event study
+  #ggdid(did.es)
+  StaggeredDiDData_covarNov <- rbind(StaggeredDiDData_covarNov, cbind(List[i], did_att_gt$Wpval[1], paste("overall"), did.es$overall.att,
+                                                                      did.es$overall.att-(did.es$overall.se*1.96),
+                                                                      did.es$overall.att+(did.es$overall.se*1.96)),
+                                     cbind(List[i], did_att_gt$Wpval[1],did.es$egt, did.es$att.egt, did.es$att.egt-(did.es$se.egt*did.es$crit.val.egt[[1]]), did.es$att.egt+(did.es$se.egt*did.es$crit.val.egt[[1]])))
+}
+names(StaggeredDiDData_covarNov) <- c("Model", "WaldPvalue", "Vari", "ATT", "LowerCI", "UpperCI")
+
+#-----------------------------
+# staggered DiD with covariates - Jan start temperature
+
+StaggeredDiDData_covarJan <- data.frame()
+for(i in 1:length(List)){
+  did_att_gt <- att_gt(yname=List[i],
+                       tname="TPoint",
+                       idname="ID",
+                       gname="First.T",
+                       xformla = ~ Bed + CalandarStart + propAgri + HSchool + Unempl,
+                       data = Merge[Merge$Ineligible == 0, ]
+  )
+  #summary(did_att_gt)
+  #ggdid(did_att_gt)
+  # aggregate them into event study plot
+  did.es <- aggte(did_att_gt, type="dynamic")
+  # plot the event study
+  #ggdid(did.es)
+  StaggeredDiDData_covarJan <- rbind(StaggeredDiDData_covarJan, cbind(List[i], did_att_gt$Wpval[1], paste("overall"), did.es$overall.att,
+                                                                      did.es$overall.att-(did.es$overall.se*1.96),
+                                                                      did.es$overall.att+(did.es$overall.se*1.96)),
+                                     cbind(List[i], did_att_gt$Wpval[1], did.es$egt, did.es$att.egt, did.es$att.egt-(did.es$se.egt*did.es$crit.val.egt[[1]]), did.es$att.egt+(did.es$se.egt*did.es$crit.val.egt[[1]])))
+}
+names(StaggeredDiDData_covarJan) <- c("Model", "WaldPvalue", "Vari", "ATT", "LowerCI", "UpperCI")
+
+#-----------------------------
+# staggered DiD with covariates subset
+
+StaggeredDiDData_covarsubset <- data.frame()
+for(i in 1:length(List)){
+  did_att_gt <- att_gt(yname=List[i],
+                       tname="TPoint",
+                       idname="ID",
+                       gname="First.T",
+                       xformla = ~ CalandarStart + Unempl,
+                       data = Merge[Merge$Ineligible == 0, ]
+  )
+  #summary(did_att_gt)
+  #ggdid(did_att_gt)
+  # aggregate them into event study plot
+  did.es <- aggte(did_att_gt, type="dynamic")
+  # plot the event study
+  #ggdid(did.es)
+  StaggeredDiDData_covarsubset<- rbind(StaggeredDiDData_covarsubset, cbind(List[i], did_att_gt$Wpval[1], paste("overall"), did.es$overall.att,
+                                                                           did.es$overall.att-(did.es$overall.se*1.96),
+                                                                           did.es$overall.att+(did.es$overall.se*1.96)),
+                                       cbind(List[i], did_att_gt$Wpval[1], did.es$egt, did.es$att.egt, did.es$att.egt-(did.es$se.egt*did.es$crit.val.egt[[1]]), did.es$att.egt+(did.es$se.egt*did.es$crit.val.egt[[1]])))
+}
+names(StaggeredDiDData_covarsubset) <- c("Model", "WaldPvalue", "Vari", "ATT", "LowerCI", "UpperCI")
+
+StaggeredDiDData_covarJan$expATT <- (exp(as.numeric(StaggeredDiDData_covarJan$ATT))-1)*100
+StaggeredDiDData_covarJan$expLowerCI <- (exp(as.numeric(StaggeredDiDData_covarJan$LowerCI))-1)*100
+StaggeredDiDData_covarJan$expUpperCI <- (exp(as.numeric(StaggeredDiDData_covarJan$UpperCI))-1)*100
