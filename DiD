@@ -321,31 +321,6 @@ names(StaggeredDiDData) <- c("Model", "WaldPvalue", "Vari", "ATT", "LowerCI", "U
 
 
 #-----------------------------
-# staggered DiD with covariates - Nov start temperature
-
-StaggeredDiDData_covarNov <- data.frame()
-for(i in 1:length(List)){
-  did_att_gt <- att_gt(yname=List[i],
-                       tname="TPoint",
-                       idname="ID",
-                       gname="First.T",
-                       xformla = ~ Bed + NovStart + propAgri + HSchool + Unempl,
-                       data = Merge[Merge$Ineligible == 0, ]
-  )
-  #summary(did_att_gt)
-  #ggdid(did_att_gt)
-  # aggregate them into event study plot
-  did.es <- aggte(did_att_gt, type="dynamic")
-  # plot the event study
-  #ggdid(did.es)
-  StaggeredDiDData_covarNov <- rbind(StaggeredDiDData_covarNov, cbind(List[i], did_att_gt$Wpval[1], paste("overall"), did.es$overall.att,
-                                                                      did.es$overall.att-(did.es$overall.se*1.96),
-                                                                      did.es$overall.att+(did.es$overall.se*1.96)),
-                                     cbind(List[i], did_att_gt$Wpval[1],did.es$egt, did.es$att.egt, did.es$att.egt-(did.es$se.egt*did.es$crit.val.egt[[1]]), did.es$att.egt+(did.es$se.egt*did.es$crit.val.egt[[1]])))
-}
-names(StaggeredDiDData_covarNov) <- c("Model", "WaldPvalue", "Vari", "ATT", "LowerCI", "UpperCI")
-
-#-----------------------------
 # staggered DiD with covariates - Jan start temperature
 
 StaggeredDiDData_covarJan <- data.frame()
@@ -354,7 +329,7 @@ for(i in 1:length(List)){
                        tname="TPoint",
                        idname="ID",
                        gname="First.T",
-                       xformla = ~ Bed + CalandarStart + propAgri + HSchool + Unempl,
+                       xformla = ~ Bed + CalandarStart + propAgri + HSchool + Unempl + Smoking + Obesity  + BPPlant,
                        data = Merge[Merge$Ineligible == 0, ]
   )
   #summary(did_att_gt)
@@ -370,31 +345,4 @@ for(i in 1:length(List)){
 }
 names(StaggeredDiDData_covarJan) <- c("Model", "WaldPvalue", "Vari", "ATT", "LowerCI", "UpperCI")
 
-#-----------------------------
-# staggered DiD with covariates subset
 
-StaggeredDiDData_covarsubset <- data.frame()
-for(i in 1:length(List)){
-  did_att_gt <- att_gt(yname=List[i],
-                       tname="TPoint",
-                       idname="ID",
-                       gname="First.T",
-                       xformla = ~ CalandarStart + Unempl,
-                       data = Merge[Merge$Ineligible == 0, ]
-  )
-  #summary(did_att_gt)
-  #ggdid(did_att_gt)
-  # aggregate them into event study plot
-  did.es <- aggte(did_att_gt, type="dynamic")
-  # plot the event study
-  #ggdid(did.es)
-  StaggeredDiDData_covarsubset<- rbind(StaggeredDiDData_covarsubset, cbind(List[i], did_att_gt$Wpval[1], paste("overall"), did.es$overall.att,
-                                                                           did.es$overall.att-(did.es$overall.se*1.96),
-                                                                           did.es$overall.att+(did.es$overall.se*1.96)),
-                                       cbind(List[i], did_att_gt$Wpval[1], did.es$egt, did.es$att.egt, did.es$att.egt-(did.es$se.egt*did.es$crit.val.egt[[1]]), did.es$att.egt+(did.es$se.egt*did.es$crit.val.egt[[1]])))
-}
-names(StaggeredDiDData_covarsubset) <- c("Model", "WaldPvalue", "Vari", "ATT", "LowerCI", "UpperCI")
-
-StaggeredDiDData_covarJan$expATT <- (exp(as.numeric(StaggeredDiDData_covarJan$ATT))-1)*100
-StaggeredDiDData_covarJan$expLowerCI <- (exp(as.numeric(StaggeredDiDData_covarJan$LowerCI))-1)*100
-StaggeredDiDData_covarJan$expUpperCI <- (exp(as.numeric(StaggeredDiDData_covarJan$UpperCI))-1)*100
