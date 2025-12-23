@@ -25,29 +25,28 @@ detach(package:plyr) # just to make sure plyr is not loaded
 
 ###########
 # AMI data
-AMISexYounger <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/AMI Metadata/Data for reviewer comment/2007_2019_Rdataset_35_64.xlsx", sheet = "Sheet1")
-AMIYounger <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/AMI Metadata/Data for reviewer comment/2007_2019_Rdataset_35_64_alladults.xlsx", sheet = "Sheet1")
-AMIYounger4_AL <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/AMI Metadata/Data for reviewer comment/2013_2019_dataset_4 age groups_35_64_alladults.xlsx", sheet = "Sheet1")
-AMIYounger4 <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/AMI Metadata/Data for reviewer comment/2013_2019_dataset_4 age groups_35_64.xlsx", sheet = "Sheet1")
-AMI_1year <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/AMI Metadata/2013_2019_Mock dataset_4 age groups_1 year older rates.xlsx", sheet = "Sheet1")
-AMISexOlder <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/AMI Metadata/Mock 2007_2019SexOlder.xlsx", sheet = "Sheet1")
-AMI <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/AMI Metadata/Mock dataset2007_2019.xlsx", sheet = "dataset")
+AMISexYounger <- read_excel("~/2007_2019_Rdataset_35_64.xlsx", sheet = "Sheet1")
+AMIYounger <- read_excel("~/2007_2019_Rdataset_35_64_alladults.xlsx", sheet = "Sheet1")
+AMIYounger4_AL <- read_excel("~/2013_2019_dataset_4 age groups_35_64_alladults.xlsx", sheet = "Sheet1")
+AMIYounger4 <- read_excel("~/2013_2019_dataset_4 age groups_35_64.xlsx", sheet = "Sheet1")
+AMI_1year <- read_excel("~/2013_2019_Mock dataset_4 age groups_1 year older rates.xlsx", sheet = "Sheet1")
+AMISexOlder <- read_excel("~/Mock 2007_2019SexOlder.xlsx", sheet = "Sheet1")
+AMI <- read_excel("~/Mock dataset2007_2019.xlsx", sheet = "dataset")
 
-ALTAMIYounger <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/AMI Metadata/Data for reviewer comment/Pre_Post_datase_35_64_alladults.xlsx", sheet = "Sheet1")
-ALTAMISexYounger <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/AMI Metadata/Data for reviewer comment/Pre_Post_datase_35_64_alternative.xlsx", sheet = "Sheet1")
-ALTAMI <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/AMI Metadata/Pre_Post_Mock_dataset.xlsx", sheet = "Sheet1")
-ALTAMISexOlder <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/AMI Metadata/Mock_Pre_Post_SexOlder.xlsx", sheet = "Sheet1")
+ALTAMIYounger <- read_excel("~/Pre_Post_datase_35_64_alladults.xlsx", sheet = "Sheet1")
+ALTAMISexYounger <- read_excel("~/Pre_Post_datase_35_64_alternative.xlsx", sheet = "Sheet1")
+ALTAMI <- read_excel("~/Pre_Post_Mock_dataset.xlsx", sheet = "Sheet1")
+ALTAMISexOlder <- read_excel("~/Mock_Pre_Post_SexOlder.xlsx", sheet = "Sheet1")
 
 ###########
 # Exposure and predictor data
-DiDCovariates <- read.csv("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/Data/DiDCovariates20220404.csv")
-agricultural_data <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/Data/2010 census data/agricultural_data.xlsx")
-Treated <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/Data/Townships Exposure/Two year townships treatment March292020_Jie.xlsx", sheet = "Sheet1")
-HealthCareAccessibilty <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/Data/Accessibility_E2SFCA_mockdataset.xlsx")
-Temperature <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/Data/LST/OutdoorTemperature_June2_2022.xlsx")
-CVDriskfactors <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/Data/CVD risk factors.xlsx", sheet = "Sheet1")
-RetiredPowerPlants <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/Data/BeijignTownships_Powerplants.xlsx", sheet = "Sheet1")
-Temperature_fluct <- read_excel("~/Library/Mobile Documents/com~apple~CloudDocs/McGIll/snowglobe/Coal Ban/Data/Temperature_fluctuation.xlsx")
+DiDCovariates <- read.csv("~/DiDCovariates20220404.csv")
+agricultural_data <- read_excel("~/agricultural_data.xlsx")
+Treated <- read_excel("~/Two year townships treatment March292020_Jie.xlsx", sheet = "Sheet1")
+HealthCareAccessibilty <- read_excel("~/Accessibility_E2SFCA_mockdataset.xlsx")
+Temperature <- read_excel("~/OutdoorTemperature_June2_2022.xlsx")
+CVDriskfactors <- read_excel("~/CVD risk factors.xlsx", sheet = "Sheet1")
+RetiredPowerPlants <- read_excel("~/BeijignTownships_Powerplants.xlsx", sheet = "Sheet1")
 
 ##################
 ## Data mangagement =====
